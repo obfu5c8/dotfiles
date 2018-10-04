@@ -1,0 +1,73 @@
+#!/usr/bin/env bash
+#############################################
+##
+## Sets up symlinks for all items in the 
+## /home folder to the user's $HOME folder
+##
+#############################################
+
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+
+. "$DIR/utils/bash-utils.sh"
+
+
+
+function LINK {
+    file="$1"
+
+    ## Check if the file already exists in the home folder
+    target="$HOME/$file"
+    echo -n "~/$file "
+    if [ -e "$target" ]; then
+        if [ -L "$target" ]; then
+            rm "$target"
+            echo -en "$grey(Removed existing symlink)$reset"
+        else
+            mv "$target" "$target.bkup"
+            echo -en "$grey(Backed up existing file)$reset"
+        fi
+    else
+        echo -en "$grey(New symlink created)$reset"
+    fi
+    echo
+    ln -s "$DIR/home/$file" "$target"
+}
+
+
+
+function link-dotfiles-to-home-folder {
+    TASK "Linking dotfiles to home folder"
+        cd "$DIR/home"
+        for name in .[^.]* ..?*; do
+            [ -e "$name" ] || continue
+            DO LINK "$name"
+        done
+    ENDTASK
+}
+
+
+
+function apply-osx-customisations {
+    TASK "Applying OSX customisations"
+        echo -en "$grey"
+        DO "$DIR/setup/osx.sh"
+        echo -en "$reset"
+    ENDTASK
+}
+
+
+
+
+
+
+link-dotfiles-to-home-folder
+
+if [ "$(uname)" == "Darwin" ]; then
+    apply-osx-customisations
+fi
+
+
+
+exec "$SHELL"
